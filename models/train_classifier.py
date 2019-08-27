@@ -1,3 +1,15 @@
+import pickle as pck
+import pandas as pd
+from sklearn.metrics import classification_report, f1_score, accuracy_score, recall_score, precision_score
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.model_selection import GridSearchCV
+from sklearn.multioutput import MultiOutputClassifier
+from sqlalchemy import create_engine
 import sys
 import re
 from nltk.tokenize import word_tokenize
@@ -5,20 +17,6 @@ from nltk.stem import WordNetLemmatizer
 import nltk
 nltk.download('wordnet')
 
-from sqlalchemy import create_engine
-
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import confusion_matrix
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.metrics import classification_report, f1_score, accuracy_score, recall_score, precision_score
-
-import pandas as pd
-import pickle as pck
 
 def load_data(database_filepath):
     # load data from database
