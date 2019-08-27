@@ -14,6 +14,7 @@ from sqlalchemy import create_engine
 
 app = Flask(__name__)
 
+
 def tokenize(text):
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
@@ -28,9 +29,29 @@ def tokenize(text):
 # load data
 engine = create_engine('sqlite:///../db/DisasterResponse.db')
 df = pd.read_sql_table('Message', engine)
+df['message_length'] = df.message.apply(lambda x: len(x))
+
+cats = ['related', 'request',
+       'offer', 'aid_related', 'medical_help', 'medical_products',
+       'search_and_rescue', 'security', 'military', 'child_alone', 'water',
+       'food', 'shelter', 'clothing', 'money', 'missing_people', 'refugees',
+       'death', 'other_aid', 'infrastructure_related', 'transport',
+       'buildings', 'electricity', 'tools', 'hospitals', 'shops',
+       'aid_centers', 'other_infrastructure', 'weather_related', 'floods',
+       'storm', 'fire', 'earthquake', 'cold', 'other_weather',
+       'direct_report']
+
+mean_lengths = []
+for cat in cats:
+    mean_lengths.append(df[df[cat] == 1].message_length.mean())
+
+mean_length_df = pd.DataFrame(dict(category=cats,
+                                  mean_lengths=mean_lengths)).sort_values(by='mean_lengths')
+
+categories = pd.DataFrame(df[cats].sum()).reset_index().rename(columns={'index': 'category', 0: 'cat_count'}).sort_values(by='cat_count')
 
 # load model
-model = joblib.load("../models/model1.pck")
+model = joblib.load("../models/model.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -63,7 +84,49 @@ def index():
                     'title': "Genre"
                 }
             }
-        }
+        },
+        {
+            'data': [
+                Bar(
+                    x=categories.category,
+                    y=categories.cat_count,
+
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "",
+                    'tickangle': "45",
+                    'font': {'size': 12}
+                },
+                'height': '600px'
+            }
+        },
+
+        {
+            'data': [
+                Bar(
+                    x=mean_length_df.category,
+                    y=mean_length_df.mean_lengths
+                )
+            ],
+
+            'layout': {
+                'title': 'Mean words in message per category',
+                'yaxis': {
+                    'title': "Mean word length"
+                },
+                'xaxis': {
+                    'title': "",
+                    'tickangle': "45"
+                }
+            }
+        },
     ]
 
     # encode plotly graphs in JSON
