@@ -1,7 +1,24 @@
 import sys
-from sqlalchemy import create_engine
-import pandas as pd
+import re
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+import nltk
+nltk.download('wordnet')
 
+from sqlalchemy import create_engine
+
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.metrics import classification_report, f1_score, accuracy_score, recall_score, precision_score
+
+import pandas as pd
+import pickle as pck
 
 def load_data(database_filepath):
     # load data from database
@@ -42,26 +59,50 @@ def build_model():
         ('clf', MultiOutputClassifier(RandomForestClassifier()))
     ])
     # define parameters for GridSearchCV
+    # only 2 parameters used for quick computation
+    # feel free to uncommment them
     parameters = {'vect__ngram_range': ((1, 1), (1, 2)),
-            # 'vect__max_df': (0.5, 0.75, 1.0),
-            # 'vect__max_features': (None, 5000, 10000),
-            # 'tfidf__use_idf': (True, False),
-            # 'clf__estimator__n_estimators': [50, 100, 200],
-            'clf__estimator__min_samples_split': [2, 3, 4]}
+                  # 'vect__max_df': (0.5, 0.75, 1.0),
+                  # 'vect__max_features': (None, 5000, 10000),
+                  # 'tfidf__use_idf': (True, False),
+                  # 'clf__estimator__n_estimators': [50, 100, 200],
+                  'clf__estimator__min_samples_split': [4]}
 
-    cv = GridSearchCV(pipeline, param_grid=parameters, n_jobs=4)
+    cv = GridSearchCV(pipeline, param_grid=parameters, n_jobs=-1)
     # create gridsearch object and return as final model pipeline
 
-    # return model_pipeline
-    pass cv
+    return cv
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+    Y_pred = model.predict(X_test)
+
+    categories = []
+    precisions = []
+    accuracies = []
+    recalls = []
+    f1_scores = []
+
+    for category, y_test, y_pred in zip(Y_test.columns, Y_test.values.T, Y_pred.T):
+        categories.append(category)
+        precisions.append(precision_score(y_test, y_pred, average='macro'))
+        accuracies.append(accuracy_score(y_test, y_pred))
+        recalls.append(recall_score(y_test, y_pred, average='macro'))
+        f1_scores.append(f1_score(y_test, y_pred, average='macro'))
+
+    results = pd.DataFrame(dict(category=categories,
+                                precision=precisions,
+                                accuracy=accuracies,
+                                recall=recalls,
+                                f1_score=f1_scores)).melt(id_vars='category',
+                                                          value_vars=[
+                                                              'precision', 'accuracy', 'recall', 'f1_score'],
+                                                          var_name='metric')
+    return results
 
 
 def save_model(model, model_filepath):
-    pass
+    pck.dump(model, open(model_filepath, 'wb+'))
 
 
 def main():
