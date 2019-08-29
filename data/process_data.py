@@ -6,6 +6,16 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+    """
+    Function that loads messaeg data from a csv
+
+    Arguments
+    messages_filepath :: str :: file path to messages CSVs
+    categories_filepath :: str :: file path to categories CSVs
+
+    Returns
+    df :: pandas.DataFrame :: a DataFrame joining the messages and categroies CSVs
+    """
 
     # read in files
     messages = pd.read_csv(messages_filepath)
@@ -16,6 +26,15 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    """
+    Function that cleans the DataFrame created by load_data()
+
+    Arguments
+    df :: pandas.DataFrame
+
+    Returns
+    df :: pandas.DataFrame :: a cleaned dataframe
+    """
     categories = df.categories.str.split(';', expand=True)
 
     # select the first row of the categories dataframe
@@ -42,6 +61,20 @@ def clean_data(df):
 
 
 def save_data(df, database_filename, db_name='Message', verbose=True):
+    """
+    Function that saves the data contained in df into a SQLite db.
+
+    Arguments
+    df :: pandas.DataFrame that will be saved
+    database_filename :: str :: location of SQLite database
+    db_name :: str :: name of the database to be created
+    verbose :: booelean :: print out how records are saved
+
+    Returns nothing
+
+    Comments
+    Because of a limitation on the SQLite writer, this function writes records in batches of 20.
+    """
     engine = create_engine('sqlite:///' + database_filename)
     with engine.begin() as conn:
         conn.execute('DROP TABLE IF EXISTS %s' % db_name)
@@ -64,7 +97,6 @@ def save_data(df, database_filename, db_name='Message', verbose=True):
 
 def main():
     if len(sys.argv) == 4:
-
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]
 
         print('Loading data...\n    MESSAGES: {}\n    CATEGORIES: {}'
@@ -79,7 +111,6 @@ def main():
         save_data(df, database_filepath)
 
         print('Cleaned data saved to database!')
-
     else:
         print('Please provide the filepaths of the messages and categories '
               'datasets as the first and second argument respectively, as '
