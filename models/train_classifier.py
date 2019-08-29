@@ -19,6 +19,17 @@ nltk.download('wordnet')
 
 
 def load_data(database_filepath):
+    """
+    Function that reads in data from a SQLite database
+
+    Arguments
+    database_filename :: str :: location of SQLite database
+
+    Returns
+    X :: pandas.DataFrame with all the messages
+    Y :: pandas.DataFrame with the binary indication of whether the associated message falls into that category
+    Columns :: pandas.Series with the categories for Y
+    """
     # load data from database
     engine = create_engine('sqlite:///' + database_filepath)
     with engine.begin() as conn:
@@ -31,6 +42,15 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """
+    Function that tokenizes provided text
+
+    Arguments
+    text :: str :: piece of text to tokenize
+
+    Returns
+    clean_tokens :: list of the clean tokens
+    """
     url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
 
     detected_urls = re.findall(url_regex, text)
@@ -48,31 +68,60 @@ def tokenize(text):
     return clean_tokens
 
 
-def build_model():
-    # text processing and model pipeline
+def build_model(n_jobs=-1, low_cpu=True):
+    """
+    Function that constructs a sklearn model
 
+    Arguments
+    low_cpu :: boolean :: Defaults to True, but the function will create a much more thorough gridsearch if False, at the cost of CPU power.
+    n_jobs :: number of CPUs to use - defaults to -1
+
+    Returns
+    cv :: model.selection.GridSearchCV that contains a sklearn pipeline with
+        CountVectorizer(tokenizer=tokenize)
+        TfidfTransformer()
+        MultiOutputClassifier(RandomForestClassifier())
+
+        which has been gridsearch with parameters defined within this function
+
+    """
+    # text processing and model pipeline
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
         ('tfidf', TfidfTransformer()),
         ('clf', MultiOutputClassifier(RandomForestClassifier()))
     ])
-    # define parameters for GridSearchCV
-    # only 2 parameters used for quick computation
-    # feel free to uncommment them
-    parameters = {'vect__ngram_range': ((1, 1), (1, 2)),
-                  # 'vect__max_df': (0.5, 0.75, 1.0),
-                  # 'vect__max_features': (None, 5000, 10000),
-                  # 'tfidf__use_idf': (True, False),
-                  # 'clf__estimator__n_estimators': [50, 100, 200],
-                  'clf__estimator__min_samples_split': [4]}
 
-    cv = GridSearchCV(pipeline, param_grid=parameters, n_jobs=-1)
+    if low_cpu:
+        parameters = {'vect__ngram_range': ((1, 1), (1, 2)),
+                      'clf__estimator__min_samples_split': [4]}
+    else:
+        parameters = {'vect__ngram_range': ((1, 1), (1, 2)),
+                      'vect__max_df': (0.5, 0.75, 1.0),
+                      'vect__max_features': (None, 5000, 10000),
+                      'tfidf__use_idf': (True, False),
+                      'clf__estimator__n_estimators': [50, 100, 200],
+                      'clf__estimator__min_samples_split': [4]}
+
     # create gridsearch object and return as final model pipeline
-
+    cv = GridSearchCV(pipeline, param_grid=parameters, n_jobs=n_jobs)
     return cv
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """
+    Function that returns accuracy metrics for a given model
+
+    Arguments
+    model :: sklearn.Estimator to be used for prediction
+    X_test :: pandas.DataFrame with messages to use for prediction
+    Y_test :: pandas.DataFrame with the correct labels
+    category_names :: list with the label names
+
+    Returns
+    resutls :: pandas.DataFrame with macro precision, accuracy, recall and f1 score for the model
+
+    """
     Y_pred = model.predict(X_test)
 
     categories = []
@@ -100,6 +149,16 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """
+    Function that saves the model in a pickle
+
+    Arguments
+    model :: sklearn.Estimator to save
+    model_filepath :: str :: location to save model to
+
+    Returns
+    Nothing
+    """
     pck.dump(model, open(model_filepath, 'wb+'))
 
 
