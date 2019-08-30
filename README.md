@@ -1,6 +1,13 @@
 # Disaster Response Pipeline Project
 
-### Instructions:
+## Overview
+This projects trains a model that creates an API that classifies disaster messages. The messages were sourced from <a href='https://www.figure-eight.com'>Figure Eight</a>, which describe themselves as a Human-in-the-Loop machine learning platform.
+
+The dataset used contains real messages that were sent during disaster events. A ML model is created that categories these messaged into 36 predefined categories so that the messages to an appropriate disaster relief agency.
+
+The project also includes a web app that an emergency worker can use to input a new message and get classification results in several categories. The web app also has a few descriptive visualizations of the data.
+
+## Getting Started
 
 0.  Set up your virtual environment by running the following in Unix
 
@@ -42,3 +49,11 @@ python run.py
 ```
 
 3.  Go to <http://0.0.0.0:3001/>
+
+## The App
+
+Below are 2 screenshots of the app. The first shows the summary visualizations for all the messages, and the second shows the view that the emergency agent will get if he inputs a messages.
+
+<img src='assets/graphs.jpg'>
+
+<img src='assets/messages.jpg'>
