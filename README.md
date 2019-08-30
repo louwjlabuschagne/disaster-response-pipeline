@@ -56,4 +56,4 @@ Below are 2 screenshots of the app. The first shows the summary visualizations f
 
 <img src='assets/graphs.jpg'>
 
-<img src='assets/messages.jpg'>
+<img src='assets/message.jpg'>
